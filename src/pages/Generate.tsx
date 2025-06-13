@@ -965,8 +965,11 @@ const Generate = () => {
       const res = await verifyPayment(orderId);
       if (res.success) {
         // Check if this is an HD image purchase
-        if (res.plan && res.plan.startsWith('hd_image_')) {
-          const imageId = res.plan.replace('hd_image_', '');
+        // The plan ID could be in either res.plan or res.order_tags.plan_id
+        const planId = res.plan || (res.order_tags && res.order_tags.plan_id);
+        
+        if (planId && planId.startsWith('hd_image_')) {
+          const imageId = planId.replace('hd_image_', '');
           // Unlock HD version of the image
           const updatedImage = await services.imageService.unlockHdImage(imageId);
           

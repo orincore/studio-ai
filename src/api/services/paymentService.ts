@@ -23,6 +23,7 @@ interface PaymentStatusResponse {
   error?: string;
   credits_added?: number;
   plan?: string;
+  order_tags?: Record<string, string>;
 }
 
 /**
@@ -73,14 +74,16 @@ export const createOrder = async (
       phone,
       return_url: returnUrl,
       notify_url: notifyUrl,
-      order_tags: {} // Initialize empty object for order_tags
+      order_tags: {} // Always include order_tags as an empty object
     };
 
     // Add plan if specified
     if (plan) {
-      // Store the plan as a tag instead of a direct property
+      payload.plan = plan;
+      
+      // Also add plan to order_tags to ensure it's properly formatted for Cashfree
       payload.order_tags = {
-        plan_type: plan
+        plan_id: plan
       };
     }
 
