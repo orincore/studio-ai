@@ -1,12 +1,7 @@
 {
-  "routes": [
-    {
-      "src": "/dist/static/(.*)",
-      "dest": "/dist/static/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
-  ]
-}
+  "root": "dist",
+  "clean_urls": true,
+  "routes": {
+    "/**": "index.html"
+  }
+} 
