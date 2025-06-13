@@ -74,40 +74,40 @@ const Pricing = () => {
     }
   };
 
-  // Your pricing plans
+  // Pricing plans
   const plans = [
     {
-      name: "Free",
+      name: 'Free',
       price: { monthly: 0, annual: 0 },
-      description: "Perfect for getting started with AI image generation",
+      description: 'Perfect for getting started with AI image generation',
       features: [
-        "1 image per day",
-        "Text-to-image generation",
-        "Basic style presets",
-        "512x512 resolution",
-        "Community support",
-        "Watermarked images"
+        '1 image per day',
+        'Text-to-image generation',
+        'Basic style presets',
+        '512x512 resolution',
+        'Community support',
+        'Watermarked images'
       ],
-      cta: "Get Started Free",
+      cta: 'Get Started Free',
       popular: false,
       icon: <Star className="h-6 w-6" />
     },
     {
-      name: "Pro",
+      name: 'Pro',
       price: { monthly: 2000, annual: 2000 * 12 },
-      description: "30 images per day for professionals",
+      description: '30 images per day for professionals',
       features: [
-        "30 images per day",
-        "All AI tools included",
-        "HD resolution (1024x1024)",
-        "No watermarks",
-        "Priority generation",
-        "Thumbnail creator",
-        "Logo generator",
-        "Profile picture creator",
-        "Email support"
+        '30 images per day',
+        'All AI tools included',
+        'HD resolution (1024x1024)',
+        'No watermarks',
+        'Priority generation',
+        'Thumbnail creator',
+        'Logo generator',
+        'Profile picture creator',
+        'Email support'
       ],
-      cta: "Subscribe Now",
+      cta: 'Subscribe Now',
       popular: true,
       icon: <Zap className="h-6 w-6" />
     }
@@ -123,13 +123,11 @@ const Pricing = () => {
   const getPrice = (plan: { price: { monthly: number; annual: number } }) =>
     isAnnual ? plan.price.annual : plan.price.monthly;
 
-  // Called when user clicks a “Purchase” button
   const handlePayment = async (amount: number) => {
     if (!user) {
       navigate('/login');
       return;
     }
-
     const userPhone = phone || user.phone;
     if (!userPhone) {
       toast({
@@ -139,8 +137,6 @@ const Pricing = () => {
       });
       return;
     }
-
-    // If newly entered, save it
     if (phone && !user.phone) {
       await services.userService.updateUserProfile({ phone });
     }
@@ -149,26 +145,21 @@ const Pricing = () => {
       // 1) Load the Cashfree SDK
       await loadCashfreeSDK();
 
-      // 2) Initialize for production
-      const cf = window.Cashfree({ mode: 'production' });
+      // 2) Initialize for production with your real clientId
+      const cf = window.Cashfree({
+        mode: 'production',
+        clientId: '651133ec7d7623ab9e8f260603331156'
+      });
 
       // 3) Create order on your backend
-      //    (this now sends return_url=https://your-domain.com/pricing)
-      const { payment_session_id } = await createOrder(
-        amount,
-        user.email,
-        userPhone
-      );
+      const { payment_session_id } = await createOrder(amount, user.email, userPhone);
 
       // 4) Redirect to Cashfree checkout
       await cf.checkout({
         paymentSessionId: payment_session_id,
         redirectTarget: '_self'
       });
-
-      // After the payment, Cashfree will send the user back to
-      // https://your-domain.com/pricing?order_id=<order_id>
-      // and your useEffect above will fire handlePaymentCallback()
+      // Cashfree will redirect back to /pricing?order_id=...
     } catch (err: any) {
       console.error('Payment error:', err);
       toast({
@@ -179,7 +170,7 @@ const Pricing = () => {
     }
   };
 
-  // Render input if no phone yet
+  // Phone input if needed
   const renderPhoneInput = () => {
     if (!user || phone || user.phone) return null;
     return (
@@ -192,11 +183,11 @@ const Pricing = () => {
           id="phone"
           placeholder="+919876543210"
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
+          onChange={e => setPhone(e.target.value)}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
         />
         <p className="mt-2 text-sm text-gray-500">
-          Required for payment processing. Will be saved for future use.
+          Required for payment processing. Will be saved to your profile for future use.
         </p>
       </div>
     );
@@ -220,7 +211,7 @@ const Pricing = () => {
             <span className={`text-sm font-medium ${!isAnnual ? 'text-gray-900' : 'text-gray-500'}`}>Monthly</span>
             <button
               onClick={() => setIsAnnual(!isAnnual)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:ring-2 focus:ring-purple-500 ${
                 isAnnual ? 'bg-purple-600' : 'bg-gray-200'
               }`}
             >
@@ -242,7 +233,7 @@ const Pricing = () => {
 
       {/* Plans Section */}
       <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-4">
+        <div className="max-w-7xl mx-auto gap-8 px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {plans.map((plan, idx) => (
             <div
               key={idx}
@@ -299,7 +290,7 @@ const Pricing = () => {
 
       {/* Credit Packs Section */}
       <section className="py-24 bg-gray-50">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
+        <div className="max-w-7xl mx-auto gap-6 px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
           {creditPacks.map((pack, idx) => (
             <div
               key={idx}
