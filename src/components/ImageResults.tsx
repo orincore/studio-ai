@@ -55,6 +55,7 @@ const ImageResults: React.FC<ImageResultsProps> = ({ images, onDownload }) => {
       });
       
       // Create order for 10 rupees (1 credit = 1 rupee)
+      // The plan parameter is now handled internally as order_tags
       const { payment_session_id } = await createOrder(
         10, 
         user.email, 

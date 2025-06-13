@@ -7,6 +7,7 @@ interface CreateOrderPayload {
   phone: string;
   return_url: string;
   notify_url: string;
+  order_tags?: Record<string, string>;
   plan?: string;
 }
 
@@ -71,12 +72,16 @@ export const createOrder = async (
       email,
       phone,
       return_url: returnUrl,
-      notify_url: notifyUrl
+      notify_url: notifyUrl,
+      order_tags: {} // Initialize empty object for order_tags
     };
 
     // Add plan if specified
     if (plan) {
-      payload.plan = plan;
+      // Store the plan as a tag instead of a direct property
+      payload.order_tags = {
+        plan_type: plan
+      };
     }
 
     // Your backend wraps the real orderDetails in `data.data`
