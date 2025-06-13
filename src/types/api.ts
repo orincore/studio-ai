@@ -125,6 +125,10 @@ export interface GeneratedImage {
   steps?: number;
   finish_reason?: string;
   cloudinary_public_id?: string;
+  cloudinary_original_url?: string;
+  has_watermark?: boolean;
+  is_free_generation?: boolean;
+  is_free_user?: boolean;
 }
 
 export interface GeneratedImageResponse {

@@ -277,7 +277,7 @@ const Profile = () => {
             <div className="bg-white rounded-2xl shadow-xl p-8">
               <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">Your Credits</h1>
               
-              <div className="bg-purple-50 rounded-xl p-6 mb-6">
+              <div className="bg-purple-50 rounded-xl p-6">
                 <div className="flex items-center">
                   <div className="h-16 w-16 bg-purple-gradient rounded-lg flex items-center justify-center">
                     <CreditCard className="h-8 w-8 text-white" />
@@ -286,24 +286,6 @@ const Profile = () => {
                     <p className="text-gray-500">Current Balance</p>
                     <h3 className="text-3xl font-bold text-gray-900">{userProfile.credit_balance} Credits</h3>
                   </div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 gap-4">
-                <div className="border border-gray-200 rounded-xl p-5">
-                  <div className="flex justify-between items-center mb-4">
-                    <h4 className="font-medium text-gray-900">Basic Generation</h4>
-                    <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">1 Credit</span>
-                  </div>
-                  <p className="text-sm text-gray-500">Standard image generation with 512x512 resolution</p>
-                </div>
-                
-                <div className="border border-gray-200 rounded-xl p-5">
-                  <div className="flex justify-between items-center mb-4">
-                    <h4 className="font-medium text-gray-900">HD Generation</h4>
-                    <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">2 Credits</span>
-                  </div>
-                  <p className="text-sm text-gray-500">High-definition image generation with 768x768 resolution</p>
                 </div>
               </div>
             </div>

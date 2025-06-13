@@ -115,6 +115,7 @@ const Login = () => {
 
           {/* Social Login */}
           <div className="space-y-3 mb-6">
+            {/* Commented out for temporary
             <button className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
               <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -130,6 +131,7 @@ const Login = () => {
               </svg>
               Continue with Facebook
             </button>
+            */}
           </div>
 
           <div className="relative mb-6">
@@ -137,7 +139,7 @@ const Login = () => {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">Or continue with email</span>
+              <span className="px-4 bg-white text-gray-500">Login with email</span>
             </div>
           </div>
 
@@ -220,41 +222,6 @@ const Login = () => {
               ) : (
                 'Sign In'
               )}
-            </button>
-            
-            {/* Debug button - for development only */}
-            <button
-              type="button"
-              onClick={() => {
-                // Create mock user data
-                const mockUser = {
-                  id: "mock-user-id",
-                  email: "user@example.com",
-                  email_confirmed: true,
-                  last_sign_in: new Date().toISOString(),
-                  created_at: new Date().toISOString(),
-                  full_name: "Mock User",
-                  avatar_url: "",
-                  country: "United States",
-                  country_code: "US",
-                  currency: "USD",
-                  timezone: "America/New_York",
-                  language: "en",
-                  role: "user",
-                  credit_balance: 100,
-                  lemonsqueezy_customer_id: null,
-                  updated_at: new Date().toISOString()
-                };
-                
-                // Store in sessionStorage for AuthContext to use
-                sessionStorage.setItem('mock_user', JSON.stringify(mockUser));
-                
-                // Reload the page to trigger AuthContext to check for the mock user
-                window.location.href = '/profile';
-              }}
-              className="mt-3 w-full bg-gray-100 text-gray-600 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors duration-200"
-            >
-              Debug: Use Mock User
             </button>
           </form>
 

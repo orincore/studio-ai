@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Sparkles, 
   Image as ImageIcon, 
@@ -53,18 +53,19 @@ import { getSuggestions } from '../api/services/imageService';
 import { generateImage } from '../api/services/imageService';
 import { generateLogo, LogoGenerationPayload, checkToken } from '../api/services/logoService';
 import { useToast } from '../contexts/ToastContext';
+import { useSearchParams } from 'react-router-dom';
+import { verifyPayment } from '../api/services/paymentService';
 
 // Define tab types
 type GenerationTab = 
   | 'text-to-image'
   | 'face-generator'
-  | 'logo-maker'
-  | 'poster-creator'
-  | 'wallpaper-generator';
+  | 'logo-maker';
 
 const Generate = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   
   // Common state
   const [activeTab, setActiveTab] = useState<GenerationTab>('text-to-image');
@@ -584,7 +585,16 @@ const Generate = () => {
 
   // Add a function to handle image download
   const handleImageDownload = (image: GeneratedImage) => {
-    handleDownload(image.cloudinary_url, image.prompt);
+    // Use the original HD URL if available (for purchased images), otherwise use the regular URL
+    const downloadUrl = image.cloudinary_original_url || image.cloudinary_url;
+    // Debug free generation status
+    console.log("Image details:", {
+      id: image.id,
+      is_free_generation: image.is_free_generation,
+      has_watermark: image.has_watermark,
+      cloudinary_original_url: image.cloudinary_original_url
+    });
+    handleDownload(downloadUrl, image.prompt);
   };
 
     const handleGenerate = async () => {
@@ -868,14 +878,6 @@ const Generate = () => {
         setStyle('photographic'); // Set photographic style for faces
         break;
         
-      case 'poster-creator':
-        setSelectedGenerationType('POSTER');
-        break;
-        
-      case 'wallpaper-generator':
-        setSelectedGenerationType('GENERAL');
-        break;
-        
       default:
         setSelectedGenerationType('GENERAL');
     }
@@ -948,6 +950,69 @@ const Generate = () => {
     if (matchingOption) {
       // Update the resolution state with the matching resolution
       setSelectedResolution(matchingOption.resolution);
+    }
+  };
+
+  // When Cashfree redirects back with ?order_id=, verify payment
+  useEffect(() => {
+    const orderId = searchParams.get('order_id');
+    if (orderId) handlePaymentVerification(orderId);
+  }, [searchParams]);
+
+  // Handle payment verification
+  const handlePaymentVerification = async (orderId: string) => {
+    try {
+      const res = await verifyPayment(orderId);
+      if (res.success) {
+        // Check if this is an HD image purchase
+        if (res.plan && res.plan.startsWith('hd_image_')) {
+          const imageId = res.plan.replace('hd_image_', '');
+          // Unlock HD version of the image
+          const updatedImage = await services.imageService.unlockHdImage(imageId);
+          
+          // Update the image in the user's images list if it exists
+          setUserImages(prevImages => 
+            prevImages.map(img => 
+              img.id === imageId ? {...img, ...updatedImage} : img
+            )
+          );
+          
+          // If the image is currently being viewed, update it
+          if (generatedImages.some(img => img.id === imageId)) {
+            setGeneratedImages(prevImages => 
+              prevImages.map(img => 
+                img.id === imageId ? {...img, ...updatedImage} : img
+              )
+            );
+          }
+          
+          toast({
+            title: 'HD Image Unlocked!',
+            description: 'You can now download the high-quality version without watermark.',
+            variant: 'success'
+          });
+        } else {
+          // Regular credit purchase
+          toast({
+            title: 'Payment Successful',
+            description: `${res.credits_added} credits added to your account.`,
+            variant: 'success'
+          });
+        }
+      } else {
+        toast({
+          title: 'Payment Failed',
+          description: res.error || 'Payment verification failed',
+          variant: 'error'
+        });
+      }
+    } catch (err: any) {
+      console.error('Payment verification failed:', err);
+      toast({
+        title: 'Error',
+        description: err.message || 'Failed to verify payment status',
+        variant: 'error'
+      });
     }
   };
 
@@ -1056,7 +1121,7 @@ const Generate = () => {
         {/* Tabs navigation */}
         <div className="bg-white rounded-2xl shadow-lg p-4 mb-6 overflow-x-auto">
           <div className="flex space-x-1 min-w-max">
-                    <button
+            <button
               onClick={() => setActiveTab('text-to-image')}
               className={`px-4 py-2 rounded-lg flex items-center transition-all ${
                 activeTab === 'text-to-image'
@@ -1066,7 +1131,7 @@ const Generate = () => {
             >
               <Sparkles className="h-4 w-4 mr-2" />
               <span>Text-to-Image</span>
-                    </button>
+            </button>
             
             <button
               onClick={() => setActiveTab('face-generator')}
@@ -1078,7 +1143,7 @@ const Generate = () => {
             >
               <User className="h-4 w-4 mr-2" />
               <span>Face Generator</span>
-                  </button>
+            </button>
             
             <button
               onClick={() => setActiveTab('logo-maker')}
@@ -1091,32 +1156,8 @@ const Generate = () => {
               <Paintbrush className="h-4 w-4 mr-2" />
               <span>Logo Maker</span>
             </button>
-            
-            <button
-              onClick={() => setActiveTab('poster-creator')}
-              className={`px-4 py-2 rounded-lg flex items-center transition-all ${
-                activeTab === 'poster-creator'
-                  ? 'bg-purple-100 text-purple-700 font-medium'
-                  : 'hover:bg-gray-100 text-gray-600'
-              }`}
-            >
-              <FileImage className="h-4 w-4 mr-2" />
-              <span>Poster Creator</span>
-            </button>
-            
-            <button
-              onClick={() => setActiveTab('wallpaper-generator')}
-              className={`px-4 py-2 rounded-lg flex items-center transition-all ${
-                activeTab === 'wallpaper-generator'
-                  ? 'bg-purple-100 text-purple-700 font-medium'
-                  : 'hover:bg-gray-100 text-gray-600'
-              }`}
-            >
-              <Monitor className="h-4 w-4 mr-2" />
-              <span>Wallpaper Generator</span>
-                  </button>
-            </div>
           </div>
+        </div>
 
         {/* Tab Content */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
@@ -1699,34 +1740,6 @@ const Generate = () => {
                       </div>
                     )}
                   </div>
-                </div>
-              )}
-              
-              {/* Poster Creator */}
-              {activeTab === 'poster-creator' && (
-                <div>
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="bg-indigo-100 p-2 rounded-lg">
-                      <FileImage className="h-6 w-6 text-indigo-600" />
-                    </div>
-                    <h2 className="text-xl font-bold text-gray-900">Poster Creator</h2>
-                  </div>
-                  
-                  {/* Content will be added in the next edit */}
-                </div>
-              )}
-              
-              {/* Wallpaper Generator */}
-              {activeTab === 'wallpaper-generator' && (
-                <div>
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="bg-teal-100 p-2 rounded-lg">
-                      <Monitor className="h-6 w-6 text-teal-600" />
-                    </div>
-                    <h2 className="text-xl font-bold text-gray-900">Wallpaper Generator</h2>
-                  </div>
-                  
-                  {/* Content will be added in the next edit */}
                 </div>
               )}
             </motion.div>

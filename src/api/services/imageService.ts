@@ -253,4 +253,20 @@ export const deleteImage = async (imageId: string): Promise<{ message: string }>
     console.error("Error deleting image:", error);
     throw handleApiError(error);
   }
+};
+
+/**
+ * Unlock HD version of an image after successful payment
+ * @param imageId - ID of the image to unlock HD version
+ * @returns The updated image with HD URL
+ */
+export const unlockHdImage = async (imageId: string): Promise<GeneratedImage> => {
+  try {
+    const endpoint = ENDPOINTS.IMAGES.UNLOCK_HD.replace(':id', imageId);
+    const response = await api.post<{data: GeneratedImage}>(endpoint);
+    return response.data.data;
+  } catch (error) {
+    console.error('Failed to unlock HD image:', error);
+    throw handleApiError(error);
+  }
 }; 

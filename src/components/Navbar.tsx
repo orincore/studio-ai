@@ -26,9 +26,12 @@ const Navbar = () => {
     { name: 'Home', href: '/' },
     { name: 'Features', href: '/features' },
     { name: 'Pricing', href: '/pricing' },
-    { name: 'Generate', href: '/generate' },
+    { name: 'Generate', href: '/generate', requiresAuth: true },
     { name: 'Contact', href: '/contact' },
   ];
+
+  // Filter navigation items based on authentication status
+  const filteredNavigation = navigation.filter(item => !item.requiresAuth || user);
 
   const isActive = (href: string) => location.pathname === href;
 
@@ -88,7 +91,7 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-4">
-              {navigation.map((item) => (
+              {filteredNavigation.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
@@ -214,7 +217,7 @@ const Navbar = () => {
       {isOpen && (
         <div className="md:hidden bg-white border-t border-gray-200">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            {navigation.map((item) => (
+            {filteredNavigation.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}

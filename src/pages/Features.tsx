@@ -1,11 +1,8 @@
 import React from 'react';
 import { 
   Image, 
-  Youtube, 
-  FileImage, 
   Award, 
   User, 
-  Eye, 
   Heart, 
   Film, 
   Star, 
@@ -27,18 +24,6 @@ const Features = () => {
       features: ["Multiple style presets", "Custom aspect ratios", "Batch generation", "High-resolution output"]
     },
     {
-      icon: <Youtube className="h-12 w-12" />,
-      title: "AI Thumbnail Creator",
-      description: "Create eye-catching YouTube thumbnails that boost your click-through rates. Upload your image, add compelling text, and let our AI generate professional thumbnails optimized for engagement.",
-      features: ["YouTube-optimized sizes", "Text overlay options", "Brand consistency", "A/B testing support"]
-    },
-    {
-      icon: <FileImage className="h-12 w-12" />,
-      title: "AI Poster Creator", 
-      description: "Design professional posters for events, marketing campaigns, or announcements. Upload your assets, specify your requirements, and generate stunning poster designs in minutes.",
-      features: ["Event poster templates", "Marketing materials", "Custom branding", "Print-ready formats"]
-    },
-    {
       icon: <Award className="h-12 w-12" />,
       title: "AI Logo Generator",
       description: "Create unique, professional logos for your business or personal brand. Input your business name and preferred style, and our AI will generate multiple logo concepts for you to choose from.",
@@ -49,12 +34,6 @@ const Features = () => {
       title: "AI Profile Picture Creator",
       description: "Generate professional headshots and avatars perfect for social media, LinkedIn, or business use. Transform your selfies into polished, professional-looking profile pictures.",
       features: ["Professional headshots", "Social media ready", "Multiple variations", "Background removal"]
-    },
-    {
-      icon: <Eye className="h-12 w-12" />,
-      title: "Dream Visualizer",
-      description: "Bring your wildest dreams and surreal visions to life. Describe your dream scenarios, no matter how abstract or fantastical, and watch them materialize as stunning visual art.",
-      features: ["Surreal imagery", "Abstract concepts", "Dream interpretation", "Artistic styles"]
     }
   ];
 
@@ -130,7 +109,7 @@ const Features = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             {mainFeatures.map((feature, index) => (
               <div key={index} className="bg-gradient-to-br from-white to-purple-50 p-8 rounded-2xl shadow-lg border border-purple-100">
                 <div className="text-purple-600 mb-6">{feature.icon}</div>
@@ -154,7 +133,7 @@ const Features = () => {
       <section className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Specialized Tools</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Specialized Tools (Coming Soon)</h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto">
               Unique AI tools designed for specific use cases and creative expressions
             </p>
@@ -250,16 +229,16 @@ const Features = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <a
               href="/signup"
-              className="bg-purple-gradient text-white px-8 py-4 rounded-lg text-lg font-semibold hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center space-x-2"
+              className="bg-purple-gradient text-white px-8 py-3 rounded-lg text-lg font-medium hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center"
             >
-              <span>Start Creating Free</span>
-              <ArrowRight className="h-5 w-5" />
+              Get Started Free
+              <ArrowRight className="ml-2 h-5 w-5" />
             </a>
             <a
-              href="/generate"
-              className="border border-gray-600 text-gray-300 hover:text-white hover:border-gray-400 px-8 py-4 rounded-lg text-lg font-semibold transition-all duration-300"
+              href="/pricing"
+              className="bg-white text-gray-900 px-8 py-3 rounded-lg text-lg font-medium hover:bg-gray-100 transition-colors duration-200"
             >
-              Try Demo
+              View Pricing
             </a>
           </div>
         </div>

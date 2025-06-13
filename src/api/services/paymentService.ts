@@ -7,6 +7,7 @@ interface CreateOrderPayload {
   phone: string;
   return_url: string;
   notify_url: string;
+  plan?: string;
 }
 
 interface CreateOrderResponse {
@@ -20,13 +21,43 @@ interface PaymentStatusResponse {
   transaction_id?: string;
   error?: string;
   credits_added?: number;
+  plan?: string;
 }
 
-// Create Cashfree order
+/**
+ * Load Cashfree SDK if not already loaded
+ */
+export const loadCashfreeSDK = (): Promise<void> =>
+  new Promise((resolve, reject) => {
+    if (window.Cashfree) {
+      window.CashfreeReady = true;
+      return resolve();
+    }
+    const script = document.createElement('script');
+    script.src = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+    script.async = true;
+    script.crossOrigin = 'anonymous';
+    script.onload = () => {
+      if (!window.Cashfree) return reject(new Error('Cashfree SDK not found'));
+      window.CashfreeReady = true;
+      resolve();
+    };
+    script.onerror = () => reject(new Error('Failed to load Cashfree SDK'));
+    document.head.appendChild(script);
+  });
+
+/**
+ * Create Cashfree order
+ * @param amount - Payment amount (equals credits to be added)
+ * @param email - User email
+ * @param phone - User phone number
+ * @param plan - Optional plan identifier
+ */
 export const createOrder = async (
   amount: number,
   email: string,
-  phone: string
+  phone: string,
+  plan?: string
 ): Promise<CreateOrderResponse> => {
   try {
     console.log('🚀 Creating payment order...');
@@ -43,6 +74,11 @@ export const createOrder = async (
       notify_url: notifyUrl
     };
 
+    // Add plan if specified
+    if (plan) {
+      payload.plan = plan;
+    }
+
     // Your backend wraps the real orderDetails in `data.data`
     const response = await api.post<{ data: CreateOrderResponse }>(
       ENDPOINTS.PAYMENT.CREATE_ORDER,
@@ -57,14 +93,34 @@ export const createOrder = async (
   }
 };
 
-// Verify payment status
+/**
+ * Verify payment status
+ * @param orderId - Order ID to verify
+ */
 export const verifyPayment = async (orderId: string): Promise<PaymentStatusResponse> => {
   try {
+    console.log('🔍 Verifying payment for order:', orderId);
     const endpoint = ENDPOINTS.PAYMENT.VERIFY.replace(':orderId', orderId);
     const response = await api.get<PaymentStatusResponse>(endpoint);
+    console.log('✅ Payment verification result:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Payment verification failed:', error);
+    console.error('❌ Payment verification failed:', error);
+    throw handleApiError(error);
+  }
+};
+
+/**
+ * Get transaction history for the current user
+ * @param page - Page number for pagination
+ * @param limit - Number of items per page
+ */
+export const getTransactionHistory = async (page = 1, limit = 10) => {
+  try {
+    const response = await api.get(`${ENDPOINTS.USER.CREDIT_HISTORY}?page=${page}&limit=${limit}`);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch transaction history:', error);
     throw handleApiError(error);
   }
 };

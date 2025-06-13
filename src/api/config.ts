@@ -239,6 +239,7 @@ export const ENDPOINTS = {
     LIST: '/api/images',
     DETAIL: '/api/images/:id',
     DELETE: '/api/images/:id',
+    UNLOCK_HD: '/api/images/:id/unlock-hd',
   },
 
   POSTERS: {

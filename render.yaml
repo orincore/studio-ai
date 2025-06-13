@@ -1,10 +1,6 @@
 services:
   - type: web
     name: orincore-ai-studio
-    env: static
-    buildCommand: ./public/render-build.sh
-    staticPublishPath: ./dist
-    routes:
-      - type: rewrite
-        source: /**
-        destination: /index.html 
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npx serve -s dist 
