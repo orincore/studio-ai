@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { services, isAuthenticated, getAccessToken, removeTokens } from '../api';
-import { User } from '../types/api';
+import { User, OtpVerificationPayload, ResetPasswordPayload } from '../types/api';
 
 interface AuthContextType {
   user: User | null;
@@ -11,6 +11,10 @@ interface AuthContextType {
   register: (fullName: string, email: string, password: string, phone: string) => Promise<void>;
   logout: () => Promise<void>;
   resetError: () => void;
+  verifyEmail: (payload: OtpVerificationPayload) => Promise<void>;
+  resendVerification: (email: string) => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (payload: ResetPasswordPayload) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -110,6 +114,62 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const verifyEmail = async (payload: OtpVerificationPayload) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      await services.authService.verifyEmail(payload);
+    } catch (err: any) {
+      setError(err.message || 'Failed to verify email');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resendVerification = async (email: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      await services.authService.resendVerification(email);
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend verification code');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const forgotPassword = async (email: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      await services.authService.forgotPassword(email);
+    } catch (err: any) {
+      setError(err.message || 'Failed to send password reset request');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resetPassword = async (payload: ResetPasswordPayload) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      await services.authService.resetPassword(payload);
+    } catch (err: any) {
+      setError(err.message || 'Failed to reset password');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     setIsLoading(true);
     setError(null);
@@ -138,7 +198,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     login,
     register,
     logout,
-    resetError
+    resetError,
+    verifyEmail,
+    resendVerification,
+    forgotPassword,
+    resetPassword
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

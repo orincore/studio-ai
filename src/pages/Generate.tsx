@@ -776,8 +776,15 @@ const Generate = () => {
       // Call the image generation API
       const result = await generateImage(payload);
       
-      console.log('Generation successful:', result);
+      console.log('Generation successful:', JSON.stringify(result));
       setIsGenerating(false);
+      
+      // Validate the result structure
+      if (!result) {
+        console.error('Empty result received from generateImage');
+        setError('Failed to generate image. Please try again.');
+        return;
+      }
       
       // Show success toast notification
       let successTitle = "Images Generated!";
@@ -788,17 +795,29 @@ const Generate = () => {
         itemType = "face";
       }
       
+      // Add null check for result.images
+      const imageCount = result.images && Array.isArray(result.images) && result.images.length ? result.images.length : 0;
+      
       toast({
         title: successTitle,
-        description: `Successfully created ${result.images.length} ${itemType}${result.images.length > 1 ? 's' : ''}.`,
+        description: `Successfully created ${imageCount} ${itemType}${imageCount > 1 ? 's' : ''}.`,
         variant: "success",
       });
       
       // Refresh the user's images
       fetchUserImages();
       
-      // Update the generated images state
-      setGeneratedImages(result.images);
+      // Update the generated images state with null check
+      if (result.images && Array.isArray(result.images)) {
+        console.log('Setting generated images:', result.images.length);
+        setGeneratedImages(result.images);
+      } else {
+        console.error('No images returned from API or invalid response format:', result);
+        setGeneratedImages([]);
+        if (!imageCount) {
+          setError('No images were generated. Please try again with a different prompt.');
+        }
+      }
     } catch (err: any) {
       console.error('Image generation failed:', err);
       

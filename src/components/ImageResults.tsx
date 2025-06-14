@@ -171,8 +171,9 @@ const ImageResults: React.FC<ImageResultsProps> = ({ images, onDownload }) => {
             Download Image
           </button>
           
-          {/* HD Purchase button for free images */}
-          {(selectedImage.is_free_generation === true || selectedImage.is_free_user === true) && (
+          {/* HD Purchase button for free images - only show if not already HD (1024x1024) */}
+          {(selectedImage.is_free_generation === true || selectedImage.is_free_user === true) && 
+           !(selectedImage.width >= 1024 && selectedImage.height >= 1024) && (
             <button 
               className="bg-gradient-to-r from-green-600 to-green-500 text-white px-4 py-2 rounded-lg flex items-center justify-center"
               onClick={() => handlePurchaseHD(selectedImage)}
@@ -196,7 +197,11 @@ const ImageResults: React.FC<ImageResultsProps> = ({ images, onDownload }) => {
         {/* Info message for free images */}
         {(selectedImage.is_free_generation === true || selectedImage.is_free_user === true) && (
           <div className="mt-4 bg-blue-50 border border-blue-100 rounded-lg p-3 text-sm text-blue-800">
-            <p>This is a free generation with limited quality (512x512) and watermark. Purchase the HD version to get the original image without watermark.</p>
+            {selectedImage.width >= 1024 && selectedImage.height >= 1024 ? (
+              <p>This is a free generation with watermark. The image is already in HD quality ({selectedImage.width}x{selectedImage.height}).</p>
+            ) : (
+              <p>This is a free generation with limited quality ({selectedImage.width}x{selectedImage.height}) and watermark. Purchase the HD version to get the original image without watermark.</p>
+            )}
           </div>
         )}
       </div>

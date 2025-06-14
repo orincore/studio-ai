@@ -1,146 +1,99 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { CheckCircle, Sparkles, AlertCircle, Loader } from 'lucide-react';
-import { services } from '../api';
+import { Sparkles, Mail, AlertCircle, Loader, CheckCircle } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const VerifyOTP = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const { verifyEmail, resendVerification, error: authError, isLoading: authLoading } = useAuth();
+  const [email, setEmail] = useState<string>('');
+  const [otp, setOtp] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isResending, setIsResending] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState<number>(0);
 
-  // Input refs for handling focus
-  const inputRefs = Array(6).fill(0).map(() => React.createRef<HTMLInputElement>());
-
+  // Get email from location state
   useEffect(() => {
-    // Get email from state or query params
-    const params = new URLSearchParams(location.search);
-    const emailParam = params.get('email');
-    const stateEmail = location.state?.email;
-    
-    if (stateEmail) {
-      setEmail(stateEmail);
-    } else if (emailParam) {
-      setEmail(emailParam);
+    if (location.state?.email) {
+      setEmail(location.state.email);
     } else {
-      // Redirect to login if no email
+      // No email provided, redirect to login
       navigate('/login');
     }
-  }, [location, navigate]);
+  }, [location.state, navigate]);
 
-  // Handle resend cooldown
+  // Handle countdown for resend button
   useEffect(() => {
-    if (resendCooldown > 0) {
-      const timer = setTimeout(() => {
-        setResendCooldown(resendCooldown - 1);
-      }, 1000);
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
       return () => clearTimeout(timer);
     }
-  }, [resendCooldown]);
+  }, [countdown]);
 
-  const handleChange = (index: number, value: string) => {
-    const newOtp = [...otp];
-    
-    // Only allow numbers
-    const sanitizedValue = value.replace(/[^0-9]/g, '');
-    newOtp[index] = sanitizedValue;
-    
-    setOtp(newOtp);
-    
-    // Auto-focus to next input
-    if (sanitizedValue && index < 5) {
-      inputRefs[index + 1].current?.focus();
+  // Use authError from context if available
+  useEffect(() => {
+    if (authError) {
+      setError(authError);
     }
-  };
+  }, [authError]);
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Handle backspace
-    if (e.key === 'Backspace') {
-      if (!otp[index] && index > 0) {
-        const newOtp = [...otp];
-        newOtp[index - 1] = '';
-        setOtp(newOtp);
-        inputRefs[index - 1].current?.focus();
-      }
-    }
-  };
+  // Use authLoading from context
+  useEffect(() => {
+    setIsLoading(authLoading);
+  }, [authLoading]);
 
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+  const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').trim();
     
-    if (/^\d+$/.test(pastedData) && pastedData.length <= 6) {
-      const digits = pastedData.split('');
-      const newOtp = [...otp];
+    if (!email) {
+      setError('Email is required');
+      return;
+    }
+    
+    if (!otp || otp.length < 4) {
+      setError('Please enter a valid verification code');
+      return;
+    }
+    
+    setError(null);
+    setSuccessMessage(null);
+    
+    try {
+      await verifyEmail({ email, otp });
+      setSuccessMessage('Email verified successfully!');
       
-      digits.forEach((digit, index) => {
-        if (index < 6) {
-          newOtp[index] = digit;
-        }
-      });
-      
-      setOtp(newOtp);
-      
-      // Focus on the next empty input or the last one
-      const nextEmptyIndex = newOtp.findIndex(val => !val);
-      if (nextEmptyIndex !== -1) {
-        inputRefs[nextEmptyIndex].current?.focus();
-      } else {
-        inputRefs[5].current?.focus();
-      }
+      // Redirect to login after successful verification
+      setTimeout(() => {
+        navigate('/login', { state: { verificationSuccess: true } });
+      }, 2000);
+    } catch (err: any) {
+      // Error is handled by the context
+      console.error("Verification failed:", err);
     }
   };
 
   const handleResendOTP = async () => {
-    if (resendCooldown > 0) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      await services.authService.resendVerification(email);
-      setResendCooldown(60); // 60 second cooldown
-      setSuccess(false); // Reset success state
-    } catch (error: any) {
-      setError(error.message || 'Failed to resend verification code');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const otpString = otp.join('');
-    
-    if (otpString.length !== 6) {
-      setError('Please enter all 6 digits of the verification code');
+    if (!email) {
+      setError('Email is required');
       return;
     }
     
-    setIsLoading(true);
+    setIsResending(true);
     setError(null);
+    setSuccessMessage(null);
     
     try {
-      await services.authService.verifyEmail({
-        email,
-        otp: otpString
-      });
-      
-      setSuccess(true);
-      
-      // Redirect after successful verification
-      setTimeout(() => {
-        navigate('/login', { state: { verificationSuccess: true } });
-      }, 2000);
-    } catch (error: any) {
-      setError(error.message || 'Failed to verify your email');
+      await resendVerification(email);
+      setSuccessMessage('Verification code sent! Please check your email.');
+      setCountdown(60); // Set 60 seconds cooldown
+    } catch (err: any) {
+      // Error is handled by the context
+      console.error("Resend failed:", err);
     } finally {
-      setIsLoading(false);
+      setIsResending(false);
     }
   };
 
@@ -156,16 +109,14 @@ const VerifyOTP = () => {
               </div>
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Verify Your Email</h1>
-            <p className="text-gray-600">
-              We've sent a 6-digit verification code to <span className="font-medium">{email}</span>
-            </p>
+            <p className="text-gray-600">Enter the verification code sent to your email</p>
           </div>
 
           {/* Success Message */}
-          {success && (
+          {successMessage && (
             <div className="bg-green-50 border border-green-100 rounded-lg p-4 mb-6 flex items-center">
               <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-              <p className="text-green-800">Email verified successfully! Redirecting you to login...</p>
+              <p className="text-green-800">{successMessage}</p>
             </div>
           )}
 
@@ -177,33 +128,36 @@ const VerifyOTP = () => {
             </div>
           )}
 
-          {/* OTP Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Email display */}
+          <div className="bg-gray-50 border border-gray-100 rounded-lg p-4 mb-6 flex items-center">
+            <Mail className="h-5 w-5 text-gray-500 mr-3 flex-shrink-0" />
             <div>
-              <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-3">
+              <p className="text-sm text-gray-500">Verification code sent to:</p>
+              <p className="text-gray-800 font-medium">{email}</p>
+            </div>
+          </div>
+
+          {/* Verification Form */}
+          <form onSubmit={handleVerify} className="space-y-6">
+            <div>
+              <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
                 Verification Code
               </label>
-              <div className="flex justify-between space-x-2">
-                {otp.map((digit, index) => (
-                  <input
-                    key={index}
-                    ref={inputRefs[index]}
-                    type="text"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleChange(index, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(index, e)}
-                    onPaste={index === 0 ? handlePaste : undefined}
-                    className="w-12 h-12 text-center text-xl font-semibold border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    required
-                  />
-                ))}
-              </div>
+              <input
+                type="text"
+                id="otp"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-center text-lg tracking-widest"
+                placeholder="Enter code"
+                maxLength={6}
+              />
             </div>
 
             <button
               type="submit"
-              disabled={isLoading || success}
+              disabled={isLoading}
               className="w-full bg-purple-gradient text-white py-3 px-4 rounded-lg font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-70 disabled:transform-none flex justify-center items-center"
             >
               {isLoading ? (
@@ -217,27 +171,35 @@ const VerifyOTP = () => {
             </button>
           </form>
 
-          {/* Resend Option */}
-          <div className="mt-8 text-center">
-            <p className="text-gray-600">
-              Didn't receive the code?{' '}
-              <button
-                onClick={handleResendOTP}
-                disabled={resendCooldown > 0 || isLoading}
-                className="text-purple-600 hover:text-purple-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {resendCooldown > 0 
-                  ? `Resend in ${resendCooldown}s` 
-                  : 'Resend code'}
-              </button>
-            </p>
+          {/* Resend OTP */}
+          <div className="mt-6 text-center">
+            <p className="text-gray-600 mb-2">Didn't receive the code?</p>
+            <button
+              onClick={handleResendOTP}
+              disabled={isResending || countdown > 0}
+              className="text-purple-600 hover:text-purple-700 font-medium disabled:text-gray-400 disabled:cursor-not-allowed"
+            >
+              {isResending ? (
+                <span className="flex items-center justify-center">
+                  <Loader className="animate-spin h-4 w-4 mr-2" />
+                  Sending...
+                </span>
+              ) : countdown > 0 ? (
+                `Resend code in ${countdown}s`
+              ) : (
+                'Resend verification code'
+              )}
+            </button>
           </div>
 
-          {/* Help Text */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <p className="text-center text-sm text-gray-500">
-              Please check your spam folder if you don't see the email in your inbox.
-            </p>
+          {/* Back to Login */}
+          <div className="mt-8 text-center">
+            <button
+              onClick={() => navigate('/login')}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              Back to Login
+            </button>
           </div>
         </div>
       </div>

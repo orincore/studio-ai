@@ -45,20 +45,61 @@ export const generateImage = async (payload: GenerateImagePayload): Promise<Gene
     
     console.log("Generating image with payload:", validatedPayload);
     
-    const response = await api.post<{success?: boolean, data?: GeneratedImageResponse} | GeneratedImageResponse>(
+    const response = await api.post<any>(
       ENDPOINTS.IMAGES.GENERATE, 
       validatedPayload
     );
     
-    console.log("Generate image response:", response.data);
+    console.log("Generate image response:", JSON.stringify(response.data));
     
-    // Check if response has a nested data structure
-    if (response.data && typeof response.data === 'object' && 'data' in response.data && response.data.data) {
-      return response.data.data;
+    // Handle the actual API response format which has a single 'image' object instead of 'images' array
+    if (response.data && response.data.image) {
+      // Convert the single image object to the expected format with an images array
+      return {
+        images: [response.data.image],
+        creditCost: response.data.image.credit_cost || 0
+      };
     }
     
-    // Original structure
-    return response.data as GeneratedImageResponse;
+    // Check if response has a nested data structure
+    if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+      if (response.data.data.image) {
+        // Handle nested single image format
+        return {
+          images: [response.data.data.image],
+          creditCost: response.data.data.image.credit_cost || 0
+        };
+      } else if (response.data.data.images && Array.isArray(response.data.data.images)) {
+        // Handle nested images array format
+        return response.data.data;
+      }
+    }
+    
+    // Fallback: try to handle any other format
+    const responseData = response.data as any;
+    
+    // If we have an images array, use it
+    if (responseData.images && Array.isArray(responseData.images)) {
+      return {
+        images: responseData.images,
+        creditCost: responseData.creditCost || 0
+      };
+    }
+    
+    // If we have a single image object, convert it to an array
+    if (responseData.image) {
+      return {
+        images: [responseData.image],
+        creditCost: responseData.image.credit_cost || 0
+      };
+    }
+    
+    // Last resort: return empty array to avoid errors
+    console.error('Unexpected API response format:', responseData);
+    return {
+      images: [],
+      creditCost: 0
+    };
   } catch (error) {
     console.error("Error generating image:", error);
     throw handleApiError(error);

@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, Sparkles, Mail, Lock, AlertCircle, Loader, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { testLogin } from '../api';
+import { services } from '../api';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -17,6 +18,8 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isResendingOTP, setIsResendingOTP] = useState(false);
+  const [emailVerificationNeeded, setEmailVerificationNeeded] = useState(false);
 
   // Check for success messages from other pages
   useEffect(() => {
@@ -36,6 +39,11 @@ const Login = () => {
   useEffect(() => {
     if (authError) {
       setError(authError);
+      
+      // Check if the error is about email verification
+      if (authError.includes('Email not verified')) {
+        setEmailVerificationNeeded(true);
+      }
     }
   }, [authError]);
 
@@ -45,6 +53,7 @@ const Login = () => {
     setIsLoading(true);
     setError(null);
     setSuccessMessage(null);
+    setEmailVerificationNeeded(false);
     
     try {
       // First try with direct test login for debugging
@@ -67,7 +76,10 @@ const Login = () => {
         localStorage.removeItem('userEmail');
       }
     } catch (error: any) {
-      // Error is handled by the context and displayed via the useEffect
+      // Check if the error is about email verification
+      if (error.message && error.message.includes('Email not verified')) {
+        setEmailVerificationNeeded(true);
+      }
       console.error("Login failed:", error);
     } finally {
       setIsLoading(false);
@@ -80,6 +92,28 @@ const Login = () => {
       ...formData,
       [name]: type === 'checkbox' ? checked : value
     });
+  };
+
+  const handleResendOTP = async () => {
+    if (!formData.email) {
+      setError('Please enter your email address to resend the verification code.');
+      return;
+    }
+
+    setIsResendingOTP(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      const response = await services.authService.resendVerification(formData.email);
+      setSuccessMessage(response.message || 'Verification code sent! Please check your email.');
+      // Navigate to the OTP verification page
+      navigate('/verify-otp', { state: { email: formData.email } });
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend verification code. Please try again.');
+    } finally {
+      setIsResendingOTP(false);
+    }
   };
 
   return (
@@ -109,7 +143,25 @@ const Login = () => {
           {error && (
             <div className="bg-red-50 border border-red-100 rounded-lg p-4 mb-6 flex items-center">
               <AlertCircle className="h-5 w-5 text-red-500 mr-3 flex-shrink-0" />
-              <p className="text-red-800">{error}</p>
+              <div className="flex-1">
+                <p className="text-red-800">{error}</p>
+                {emailVerificationNeeded && (
+                  <button 
+                    onClick={handleResendOTP}
+                    disabled={isResendingOTP}
+                    className="mt-2 text-sm font-medium text-purple-600 hover:text-purple-800 flex items-center"
+                  >
+                    {isResendingOTP ? (
+                      <>
+                        <Loader className="animate-spin h-3 w-3 mr-1" />
+                        Sending verification code...
+                      </>
+                    ) : (
+                      'Resend verification code'
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
