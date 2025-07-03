@@ -9,7 +9,8 @@ interface FormData {
   password: string;
   confirmPassword: string;
   agreeToTerms: boolean;
-  phone: string;
+  countryCode: string;
+  phoneNumber: string;
 }
 
 const Signup = () => {
@@ -22,7 +23,8 @@ const Signup = () => {
     password: '',
     confirmPassword: '',
     agreeToTerms: false,
-    phone: '',
+    countryCode: '+1', // Default to +1 (US)
+    phoneNumber: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,16 +42,39 @@ const Signup = () => {
     }
   }, [authError]);
 
+  const countryCodes = [
+    { name: "United States", dial_code: "+1" },
+    { name: "India", dial_code: "+91" },
+    { name: "United Kingdom", dial_code: "+44" },
+    { name: "Canada", dial_code: "+1" },
+    { name: "Australia", dial_code: "+61" },
+    { name: "Germany", dial_code: "+49" },
+    { name: "France", dial_code: "+33" },
+    { name: "Japan", dial_code: "+81" },
+    { name: "Brazil", dial_code: "+55" },
+    { name: "Mexico", dial_code: "+52" },
+    { name: "China", dial_code: "+86" },
+    { name: "South Africa", dial_code: "+27" },
+    { name: "Singapore", dial_code: "+65" },
+    { name: "New Zealand", dial_code: "+64" },
+    { name: "Netherlands", dial_code: "+31" },
+    { name: "Sweden", dial_code: "+46" },
+    { name: "Switzerland", dial_code: "+41" },
+    { name: "Spain", dial_code: "+34" },
+    { name: "Italy", dial_code: "+39" },
+    { name: "Argentina", dial_code: "+54" },
+  ];
+
   const validateForm = () => {
-    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword || !formData.phone) {
+    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword || !formData.phoneNumber || !formData.countryCode) {
       setError('All fields are required');
       return false;
     }
 
-    // Validate phone number format (must start with + and have 7-15 digits)
-    const phoneRegex = /^\+[1-9]\d{1,14}$/;
-    if (!phoneRegex.test(formData.phone)) {
-      setError('Please enter a valid phone number with country code (e.g., +91 9876543210)');
+    // Validate phone number format (digits only, reasonable length)
+    const phoneRegex = /^\d{7,15}$/; // 7 to 15 digits
+    if (!phoneRegex.test(formData.phoneNumber)) {
+      setError('Please enter a valid phone number (7-15 digits)');
       return false;
     }
 
@@ -83,7 +108,8 @@ const Signup = () => {
     
     try {
       // Call the registration function from context
-      await register(formData.name, formData.email, formData.password, formData.phone);
+      const fullPhoneNumber = formData.countryCode + formData.phoneNumber;
+      await register(formData.name, formData.email, formData.password, fullPhoneNumber);
       setSuccess(true);
     } catch (error: any) {
       // Error is handled by the context and displayed via the useEffect
@@ -92,12 +118,21 @@ const Signup = () => {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value
-    });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+
+    if (name === 'agreeToTerms') {
+      const target = e.target as HTMLInputElement;
+      setFormData({
+        ...formData,
+        [name]: target.checked
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
   };
 
   const benefits = [
@@ -197,21 +232,41 @@ const Signup = () => {
                 <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
                   Phone Number <span className="text-red-500">*</span>
                 </label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    required
-                    placeholder="+91 9876543210"
-                    pattern="^\+[1-9]\d{1,14}$"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
+                <div className="flex">
+                  <div className="relative flex-shrink-0 w-20">
+                    <select
+                      id="countryCode"
+                      name="countryCode"
+                      value={formData.countryCode}
+                      onChange={handleChange}
+                      required
+                      className="appearance-none w-full pl-3 pr-8 py-3 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+                    >
+                      {countryCodes.map((country, index) => (
+                        <option key={index} value={country.dial_code}>
+                          {country.dial_code} ({country.name})
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                      <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                    </div>
+                  </div>
+                  <div className="relative flex-grow">
+                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <input
+                      type="tel"
+                      id="phoneNumber"
+                      name="phoneNumber"
+                      value={formData.phoneNumber}
+                      onChange={handleChange}
+                      required
+                      placeholder="9876543210"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                  </div>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">Include country code (e.g., +91 for India)</p>
+                <p className="mt-1 text-xs text-gray-500">Enter your phone number (e.g., 9876543210)</p>
               </div>
 
               <div>
